@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"apm/models"
 )
@@ -87,31 +88,19 @@ func DeleteProcessFromManagementFile(pid int) (error) {
 	return os.WriteFile("apm.json", bs, 0777)
 }
 
-func InitializeProcess(fp string, args []string, name string) (models.Process, error) {
-	var procAttr os.ProcAttr
-	procAttr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+func InitializeProcess(filePath string, args []string, name string) (models.Process, error) {
+	fileExts := strings.Split(filePath, ".")
+	parsedPath := strings.Split(filePath, "\\")
 
-	exts := strings.Split(fp, ".")
-
-	if exts[len(exts) - 1] == "js" {
-		cmd := exec.Command("where", "node")
-		nodeLoc, _ := cmd.Output()
-
-		proc, err := os.StartProcess(`C:\Program Files\nodejs\node.exe`, []string{ string(nodeLoc), fp, strings.Join(args, " ") }, &procAttr)
-
-		if err != nil {
-			return models.Process{}, err
-		}
-
-		releaseErr := proc.Release()
-
-		if releaseErr != nil {
-			return models.Process{}, releaseErr
-		}
+	if fileExts[len(fileExts) - 1] == "js" {
+		command := exec.Command(`C:\Program Files\nodejs\node.exe`, filePath)
+		command.Start()
 
 		process := models.Process{
-			Process: *proc,
+			Process: *command.Process,
 			Name: name,
+			File: parsedPath[len(parsedPath) - 1],
+			StartedAt: time.Now().String(),
 		}
 
 		WriteProcessToManagementFile(process)

@@ -1,6 +1,8 @@
 package models
 
-import "os"
+import (
+	"os"
+)
 
 type ManagementFile struct {
 	ProcessList []Process
@@ -8,8 +10,10 @@ type ManagementFile struct {
 }
 
 type Process struct {
-	Name string   `json:"name"`
-	Logs []string `json:"logs"`
+	Name 		string   		`json:"name"`
+	Logs 		[]string	 	`json:"logs"`
+	File 		string 	 		`json:"file"`
+	StartedAt 	string			`json:"started_at"`
 	os.Process
 }
 

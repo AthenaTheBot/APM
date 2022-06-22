@@ -8,6 +8,8 @@ import (
 
 	"apm/helpers"
 	"apm/models"
+
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 			process := models.Process{
 				Process: *proc,
 				Name: m.Name,
+				File: m.File,
+				StartedAt: m.StartedAt,
 				Logs: m.Logs,
 			}
 			processes = append(processes, process)
@@ -68,25 +72,45 @@ func main() {
 
 		case string(models.SHOW_PROCESSLIST):
 			if len(processes) == 0 {
-				fmt.Println("No process to list!")
-			} else {
- 				fmt.Println("Listing current processes...")
-				for _, proc := range processes {
-					fmt.Printf("[PID]: %d, [Name]: %s, [Uptime]: %d\n", proc.Pid, proc.Name, 0)
-				}
+				fmt.Println("There isn't any processes to show.")
+				break
 			}
+
+			t := table.NewWriter()
+    		t.SetOutputMirror(os.Stdout)
+    		t.AppendHeader(table.Row{"PID", "Name", "File", "Started At"})
+    		t.AppendSeparator()
+
+			for _, process := range processes {
+				t.AppendRow([]interface{}{process.Pid, process.Name, process.File, process.StartedAt})
+			}
+
+    		t.Render()
 			break
 
 		case string(models.KILL_PROCESS):
 			fmt.Println("Killing process...")
 
+			killedProcess := false
 			targetProc := os.Args[2]	
 			for _, p := range processes {
 				if p.Name == targetProc || strconv.FormatInt(int64(p.Pid), 10) == targetProc {
 					helpers.DeleteProcessFromManagementFile(p.Pid)
-					p.Kill()
+					killErr := p.Kill()
+
+					if killErr != nil {
+						fmt.Println(killErr)
+						break
+					}
+
+					killedProcess = true
 				}
 			}
+
+			if killedProcess {
+				fmt.Println("Killed process.")
+			}
+
 			break
 
 		default:
